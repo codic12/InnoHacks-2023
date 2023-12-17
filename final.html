@@ -1,0 +1,224 @@
+<!doctype html>
+
+<head>
+    <title>ESC Bot</title>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.2.0/math.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;400;700;900&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,500;1,700&display=swap');
+
+        body {
+            font-family: "Roboto";
+            background-color: #cbc3e3;
+        }
+
+        #messages {
+            list-style-type: none;
+            margin: 35px;
+            padding: 0;
+        }
+
+        #messages>li {
+            padding: 0.5rem 1rem;
+        }
+
+        #messages>li:nth-child(odd) {
+            background: #dad6e8;
+        }
+
+        #messages>li:nth-child(even) {
+            font-weight: bold;
+            text-align: right;
+        }
+
+        #bottom {
+            background: #cfcfcf;
+            padding: 0rem;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            height: 3rem;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+
+    <script>
+        // prompt 1: "formula for area of square"
+        // prompt 2: "solve area of square"
+        var formulas = {
+            "area of square": "s^2",
+            "area of rectangle": "l*w",
+            "area of circle": "pi*r^2",
+            "volume of sphere": "4/3*pi*r^3",
+            "quadratic formula": "x = (-b + sqrt(b^2 - 4ac)) / (2a)",
+	    "mean":"(a+b+c)/3"
+        }
+
+        var teacher_info = {
+            // format: [class name, rti days, office hours, bio, rm #]
+            "john smith": ["English 9H", "Monday, Wedensday, Friday", "12:40-1:20", "Mr. Smith is passionate about teaching english. With a degree from Cornell University, he immensly enjoys teaching young freshmen the eloquent art of writing and analyzing texts in the English language.", "305"],
+            "jane doe": ["Geometry H", "Tuesday, Wedensday, Friday", "8:00-8:30", "Mrs. Doe is a Geometry teacher who's been working in the field for decades. As a child, she always struggled with mathematics, but one day it clicked for her, and now she wants to make sure she can help it click for others. She loves to be precise, accurate, dedicated, efficent, and strives for perfection in all aspects of life.", "464"],
+            "jim adams": ["Counselor", "All week", "8:30-3:20", "Mr. Adams knows what it's like to be hurt by those you love. As a child, he was relentlessly bullied. Now he wants to make sure no one else suffers the same fate.", "205"]
+        };
+
+        function appendMessage(input, new_content) {
+            var list = document.getElementById('messages');
+            var entry = document.createElement('li');
+            entry.appendChild(document.createTextNode(input));
+            var entry2 = document.createElement('li');
+            entry2.innerHTML = new_content;
+            list.appendChild(entry);
+            list.appendChild(entry2);
+        }
+
+        function innn() {
+            var input = document.getElementById('input').value.toLowerCase();
+            // branch a : math functions
+            if (input.startsWith('formula for ')) {
+                var q = input.substr(12);
+                console.log(formulas[q]);
+                appendMessage(input, `<tt>${formulas[q]}</tt>`);
+            } else if (input.startsWith('solve ')) {
+                var q = input.substr(6);
+                console.log(q); // q = "area of X" (for example)
+                Swal.fire({
+                    title: "Enter list of variables",
+                    input: "text",
+                    inputLabel: "the formula is " + formulas[q] + ", use format 'x=4,y=3'",
+                    showCancelButton: true,
+                    inputValidator: (value) => {
+                        if (!value) {
+                            return "You need to write the variables' values!";
+                        }
+                    }
+                }).then(varstr => {
+                    var variables = varstr.value.split(',');
+                    var variable_dictionary = {};
+                    variables.forEach(function (item) {
+                        var things = item.split('=');
+                        variable_dictionary[things[0]] = things[1];
+                    });
+                    var formula = formulas[q];
+                    for (const [k, v] of Object.entries(variable_dictionary)) {
+                        console.log(k);
+                        formula = formula.replaceAll(k, '(' + v + ')');
+                    }
+                    appendMessage(input, `<tt>${math.evaluate(formula)}</tt>`);
+                });
+            } else if (input.startsWith('define ')) {
+                var q = input.substr(7);
+                var xmlHttp = new XMLHttpRequest();
+                xmlHttp.open("GET", "https://api.dictionaryapi.dev/api/v2/entries/en/" + q, false); // false for synchronous request
+                xmlHttp.send(null);
+                var resp = JSON.parse(xmlHttp.response)[0];
+                if (resp == undefined) {
+                    appendMessage(input, " This word cannot be found.");
+                }
+                appendMessage(input, `<i>(${resp['meanings'][0]['partOfSpeech']}) </i>${resp['meanings'][0]['definitions'][0]['definition']}`);
+            } else if (input == 'create a workout') {
+                Swal.fire({
+                    title: "What part of your body do you want to workout?",
+                    input: "text",
+                    showCancelButton: true,
+                    inputValidator: (value) => {
+                        if (!value) {
+                            return "You need to specifiy a body part.";
+                        }
+                    }
+                }).then(varwork => {
+                    var q = varwork.value.toLowerCase();
+                    if (q == "lower body") {
+                        Swal.fire({
+                            title: "How long are you going to work out for?",
+                            input: "text",
+                            showCancelButton: true,
+                            inputValidator: (value) => {
+                                if (!value) {
+                                    return "You need to specifiy how long you are working out for?";
+                                }
+                            }
+                        }).then(vartime => {
+                            var q = vartime.value;
+                            var r = Number(q);
+                            console.log("Do lunges for " + (r * (40 / 100)));
+                            appendMessage(input,"<p><u> Lower Body Workout: </u></p>"  + "<p>Total Workout Time: " + r + " minute(s)</p>" + "<p>Warm-up for " + (r * 0.05) + " minute(s).</p>" + "<p>Do lunges for " + (r * 0.4) + " minute(s).</p>" + "<p>Do squats for " + (r * 0.5) + " minute(s).</p>" + "<p>Rest for " + (r * 0.1) + " minutes</p>" + "<p>Cool-down for " + (r * 0.05) + " minute(s).</p>");
+                        }); 
+
+                    } else if(q == "upper body"){
+			 Swal.fire({
+                            title: "How long are you going to work out for?",
+                            input: "text",
+                            showCancelButton: true,
+                            inputValidator: (value) => {
+                                if (!value) {
+                                    return "You need to specifiy how long you are working out for?";
+                                }
+                            }
+                        }).then(vartime => {
+                            var q = vartime.value;
+                            var r = Number(q);
+                            appendMessage(input, "<p><u> Upper Body Workout: </u></p>" + "<p>Total Workout Time: " + r + " minute(s)</p>" + "<p>Warm-up for " + (r * 0.05) + " minute(s).</p>" + "<p>Do bicep curls for " + (r * 0.35) + " minute(s)</p>" + "<p>Do rows for " + (r * 0.45) + " minute(s).</p>" + "<p>Rest for " + (r * 0.1) + " minutes</p>" + "<p>Cool-down for " + (r * 0.05) + " minute(s).</p>");
+                        }); 
+			}
+                });
+            } else if (input.startsWith('teacher info on ')) {
+                var q = input.substr(16);
+                if (!(q in teacher_info)) {
+                    Swal.fire({
+                        title: "Uh-Oh!",
+                        text: "There's no teacher with that name. Try again!",
+                        icon: "error"
+                    });
+                    return;
+                }
+                appendMessage(input, `<u>${q}</u><p>Course name: ${teacher_info[q][0]}</p><p>Days RTI is offered: ${teacher_info[q][1]}</p><p>Office Hours: ${teacher_info[q][2]}</p><p>Teacher bio: ${teacher_info[q][3]}</p><p>Room number: ${teacher_info[q][4]}`)
+            } else if (input == 'clear') {
+                document.getElementById("messages").innerHTML = "";
+            } else if (input.startsWith('calculate ')) {
+                var q = input.substr(10);
+                appendMessage(input, `<tt>${math.evaluate(q)}</tt>`);
+            } else if(input == 'help'){
+		appendMessage(input,"<p><u> RTI: </u></p>" + "<p># teacher info 'teacher's full name'</p>" + "<p><u> English:</u></p>" + "<p># define 'word'</p>" + "<p><u> Math - 'formula for'/'solve':</u></p>" + "<p> # area of square </p>"  + "<p> # area of rectangle </p>"  + "<p> # area of circle </p>" + "<p> # volume of sphere </p>"  + "<p> # mean </p>" + "<p><u>P.E - create a workout:</u></p>" + "<p># lower body</p>" + "<p># upper body</p>");
+	    } else {
+                appendMessage(input, "Sorry I don't quite understand. Could you please rephrase your words in a way that makes sense?");
+            }
+            document.getElementById('input').value = '';
+        }
+
+    </script>
+    <p style="text-align:center;font-size:2vw"><b>Ask the "ESC Bot" anything you want.</b></p><p style="text-align:center;font-size:2vw"><b>Type help for a list of functions</b></p>
+
+    <ul id="messages"></ul>
+    <div id='bottom'>
+        <input id="input" class="form-control" autocomplete="off" placeholder="Type your questions" style='background-color:#e1ddee'/>
+        <button onclick='innn()' class="btn btn-warning" style="background-color: purple;color:white"; placeholder="Enter password"><b>Go</b></button>
+    </div>
+
+<body>
+</body>
+</html>
+    <!-- <div id="content" name="content"></div> -->
+</body>
